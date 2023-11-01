@@ -1,26 +1,27 @@
-# Stage 1: Build the application
+# Stage 1: Build stage
 FROM python:3.9 as builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy only the requirements file to work directory
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Copy the entire application code to work directory
 COPY . .
+RUN rm requirements.txt
 
-# Stage 2: Create the final image
-FROM python:3.9-slim
+# Stage 2: Production stage
+FROM builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy the built application from the previous stage
-COPY --from=builder /app /app
+# Copy the installed dependencies from the previous stage
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 
-# Specify the command to run your application
-CMD ["python", "app.py"]
+# Copy the application source code from the previous stage
+COPY --from=builder /app/* .
+
+EXPOSE 5555
+
+CMD ["python","app.py"]
